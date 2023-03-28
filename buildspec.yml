@@ -5,6 +5,7 @@ phases:
     runtime-versions:
       python: 3.10
     commands:
+      - mkdir terraform  # Create the terraform directory
       # Check if Terraform is already installed
       - if [ ! -x "$(command -v terraform)" ]; then
           echo Installing Terraform;
@@ -28,3 +29,4 @@ phases:
       - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
       # If there are changes, apply the plan
       - if [ $PLAN_EXIT_CODE -eq 2 ]; then terraform apply -auto-approve tfplan; fi
+
