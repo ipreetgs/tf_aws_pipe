@@ -24,7 +24,7 @@ phases:
   post_build:
     commands:
       - echo Deploying Infrastructure with Terraform
-      - cd terraform
+#       - cd terraform
       # Check if there are changes to apply
       - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
       # If there are changes, apply the plan
