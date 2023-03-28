@@ -19,7 +19,7 @@ phases:
       - cd terraform
       - terraform init
       - terraform validate
-      - terraform plan -out=terraform plan
+      - terraform plan -out=tfplan
       - terraform show -json tfplan > tfplan.json # save plan as JSON for later use
   post_build:
     commands:
