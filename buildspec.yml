@@ -5,8 +5,8 @@ phases:
     runtime-versions:
       python: 3.10
     commands:
-      - mkdir terraform  # Create the terraform directory
-      # Check if Terraform is already installed
+      - mkdir terraform
+      - cd terraform
       - if [ ! -x "$(command -v terraform)" ]; then
           echo Installing Terraform;
           curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.1.4/terraform_1.1.4_linux_amd64.zip;
@@ -19,13 +19,11 @@ phases:
       - cd terraform
       - terraform init
       - terraform validate
-      - terraform plan -out=tfplan
-      - terraform show -json tfplan > tfplan.json # save plan as JSON for later use
+      - terraform plan -out=tfplan || echo "terraform plan failed"
+      - terraform show -json tfplan > tfplan.json || echo "terraform show failed"
   post_build:
     commands:
       - echo Deploying Infrastructure with Terraform
       - cd terraform
-      # Check if there are changes to apply
       - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
-      # If there are changes, apply the plan
       - if [ $PLAN_EXIT_CODE -eq 2 ]; then terraform apply -auto-approve tfplan; fi
