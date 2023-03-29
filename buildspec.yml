@@ -39,12 +39,16 @@ phases:
       - mv terraform /usr/local/bin/
   build:
     commands:
+      - echo Building Infrastructure with Terraform
+#       - cd terraform
       - terraform init
-      - terraform validate 
+      - terraform validate
       - terraform plan -out=tfplan || echo "terraform plan failed"
       - terraform show -json tfplan > tfplan.json || echo "terraform show failed"
   post_build:
     commands:
-        - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
-        - if [ $PLAN_EXIT_CODE -eq 2 ]; then terraform apply -auto-approve tfplan; fi
+      - echo Deploying Infrastructure with Terraform
+#       - cd terraform
+      - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
+      - if [ $PLAN_EXIT_CODE -eq 2 ]; then terraform apply -auto-approve tfplan; fi
 
