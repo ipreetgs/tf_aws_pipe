@@ -40,130 +40,101 @@
 #   }
     
 # }
-# Create an S3 bucket
-resource "aws_s3_bucket" "example_bucket" {
-  bucket = var.bucket_name
+
+
+
+
+
+
+provider "aws" {
+  region = "us-west-2"
 }
 
-# Create a VPC
-resource "aws_vpc" "example_vpc" {
-  cidr_block = var.vpc_cidr_block
+resource "aws_s3_bucket" "example" {
+  bucket = "example-bucket"
+  acl    = "private"
+}
+
+resource "aws_vpc" "example" {
+  cidr_block = "10.0.0.0/16"
 
   tags = {
     Name = "example-vpc"
   }
 }
 
-# Create a subnet
-resource "aws_subnet" "example_subnet" {
-  vpc_id            = aws_vpc.example_vpc.id
-  cidr_block        = var.subnet_cidr_block
-  availability_zone = var.availability_zone
+resource "aws_subnet" "example" {
+  vpc_id     = aws_vpc.example.id
+  cidr_block = "10.0.1.0/24"
 
   tags = {
     Name = "example-subnet"
   }
 }
 
-# Create an EC2 instance
-resource "aws_instance" "example_instance" {
-  ami           = var.ami
-  instance_type = var.instance_type
-  subnet_id     = aws_subnet.example_subnet.id
-  key_name      = var.key_name
+resource "aws_security_group" "example" {
+  name_prefix = "example"
+  vpc_id      = aws_vpc.example.id
 
-  tags = {
-    Name = "example-instance"
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+  key_name      = "example-key"
+  subnet_id     = aws_subnet.example.id
+  vpc_security_group_ids = [aws_security_group.example.id]
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("~/.ssh/example-key.pem")
+    host        = self.public_ip
   }
 
   provisioner "remote-exec" {
     inline = [
-      "echo 'Hello, world!' > /tmp/hello.txt",
+      "sudo apt-get update",
+      "sudo apt-get install -y nginx",
+      "sudo service nginx start"
     ]
   }
 }
 
-# Create an Elastic Container Registry (ECR) repository
-resource "aws_ecr_repository" "example_repository" {
-  name = var.ecr_repository_name
+resource "aws_db_subnet_group" "example" {
+  name       = "example-db-subnet-group"
+  subnet_ids = [aws_subnet.example.id]
+
+  tags = {
+    Name = "example-db-subnet-group"
+  }
 }
 
-# Create a CodeBuild project
-resource "aws_codebuild_project" "example_build_project" {
-  name          = "example-build-project"
-  description   = "Example build project"
-  build_timeout = 60
+resource "aws_db_instance" "example" {
+  engine               = "mysql"
+  engine_version       = "8.0.23"
+  instance_class       = "db.t2.micro"
+  allocated_storage    = 20
+  name                 = "example-db"
+  username             = "example-user"
+  password             = "example-password"
+  db_subnet_group_name = aws_db_subnet_group.example.name
 
-  source {
-    type            = "CODEPIPELINE"
-    buildspec       = "buildspec.yml"
-    git_clone_depth = 1
+  tags = {
+    Name = "example-db"
   }
-
-  environment {
-    compute_type    = "BUILD_GENERAL1_SMALL"
-    type            = "LINUX_CONTAINER"
-    image           = "aws/codebuild/standard:4.0"
-    privileged_mode = true
-  }
-
-  service_role = aws_iam_role.example_build_role.arn
 }
-
-# Create an IAM role for the CodeBuild project
-resource "aws_iam_role" "example_build_role" {
-  name = "example-build-role"
-
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      {
-        Effect    = "Allow"
-        Principal = {
-          Service = "codebuild.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-
-  # Attach policies that grant the necessary permissions for your build project
-}
-
-# Create a CodePipeline that deploys the EC2 instance and builds and pushes a Docker image to ECR
-resource "aws_codepipeline" "example_pipeline" {
-  name     = "example-pipeline"
-  role_arn = aws_iam_role.example_pipeline_role.arn
-
-  artifact_store {
-    location = aws_s3_bucket.example_bucket.bucket
-    type     = "S3"
-  }
-
-  stage {
-    name = "Source"
-
-    action {
-      name            = "Source"
-      category        = "Source"
-      owner           = "AWS"
-      provider        = "S3"
-      version         = "1"
-      output_artifacts = ["source_output"]
-
-      configuration = {
-        BucketName = aws_s3_bucket.example_bucket.bucket
-        Key        = "source.zip"
-      }
-    }
-  }
-
-  stage {
-    name = "Build"
-
-    action {
-      name            = "Build"
-      category        = "Build"
-      owner           = "AWS"
-      provider        = "Code
 
