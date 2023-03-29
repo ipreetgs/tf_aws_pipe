@@ -40,8 +40,11 @@ phases:
   build:
     commands:
       - terraform init
-      - terraform apply -auto-approve
+      - terraform validate
+#     - terraform plan -out=tfplan || echo "terraform plan failed"
+#     - terraform show -json tfplan > tfplan.json || echo "terraform show failed"
   post_build:
     commands:
-      - terraform destroy -auto-approve
+        - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
+        - if [ $PLAN_EXIT_CODE -eq 2 ]; then terraform apply -auto-approve tfplan; fi
 
