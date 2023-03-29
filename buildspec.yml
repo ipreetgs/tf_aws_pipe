@@ -32,21 +32,11 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      docker: 18
-  pre_build:
-    commands:
-      - echo Logging in to Amazon ECR...
-      - $(aws ecr get-login --no-include-email --region us-east-1)
+      terraform: latest
   build:
     commands:
-      - echo Building Docker image...
-      - docker build -t 739011406712.dkr.ecr.us-east-1.amazonaws.com/demo:${CODEBUILD_RESOLVED_SOURCE_VERSION} .
+      - terraform init
+      - terraform apply -auto-approve
   post_build:
     commands:
-      - echo Pushing Docker image to Amazon ECR...
-      - docker push 739011406712.dkr.ecr.us-east-1.amazonaws.com/demo:${CODEBUILD_RESOLVED_SOURCE_VERSION}
-      - echo Writing image definitions file...
-      - printf '[{"name":"example-app","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:%s"}]' 739011406712 us-east-1 demo ${CODEBUILD_RESOLVED_SOURCE_VERSION} > imagedefinitions.json
-artifacts:
-  files:
-    - imagedefinitions.json
+      - terraform destroy -auto-approve
