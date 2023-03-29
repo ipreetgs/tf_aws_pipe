@@ -31,8 +31,12 @@ version: 0.2
 
 phases:
   install:
-    runtime-versions:
-      terraform: latest
+    commands:
+      - apt-get update
+      - apt-get install -y curl
+      - curl -O https://releases.hashicorp.com/terraform/1.0.10/terraform_1.0.10_linux_amd64.zip
+      - unzip terraform_1.0.10_linux_amd64.zip
+      - mv terraform /usr/local/bin/
   build:
     commands:
       - terraform init
@@ -40,3 +44,4 @@ phases:
   post_build:
     commands:
       - terraform destroy -auto-approve
+
