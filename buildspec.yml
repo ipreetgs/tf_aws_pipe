@@ -1,29 +1,52 @@
+# version: 0.2
+
+# phases:
+#   install:
+#     runtime-versions:
+#       python: 3.10
+#     commands:
+#       - mkdir terraform
+#       - cd terraform
+#       - if [ ! -x "$(command -v terraform)" ]; then
+#           echo Installing Terraform;
+#           curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.1.4/terraform_1.1.4_linux_amd64.zip;
+#           unzip -o /tmp/terraform.zip -d /usr/local/bin/;
+#         fi
+#       - terraform -version
+#   build:
+#     commands:
+#       - echo Building Infrastructure with Terraform
+# #       - cd terraform
+#       - terraform init
+#       - terraform validate
+#       - terraform plan -out=tfplan || echo "terraform plan failed"
+#       - terraform show -json tfplan > tfplan.json || echo "terraform show failed"
+#   post_build:
+#     commands:
+#       - echo Deploying Infrastructure with Terraform
+# #       - cd terraform
+#       - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
+#       - if [ $PLAN_EXIT_CODE -eq 2 ]; then terraform apply -auto-approve tfplan; fi
 version: 0.2
 
 phases:
   install:
     runtime-versions:
-      python: 3.10
+      docker: 18
+  pre_build:
     commands:
-      - mkdir terraform
-      - cd terraform
-      - if [ ! -x "$(command -v terraform)" ]; then
-          echo Installing Terraform;
-          curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.1.4/terraform_1.1.4_linux_amd64.zip;
-          unzip -o /tmp/terraform.zip -d /usr/local/bin/;
-        fi
-      - terraform -version
+      - echo Logging in to Amazon ECR...
+      - $(aws ecr get-login --no-include-email --region us-east-1)
   build:
     commands:
-      - echo Building Infrastructure with Terraform
-#       - cd terraform
-      - terraform init
-      - terraform validate
-      - terraform plan -out=tfplan || echo "terraform plan failed"
-      - terraform show -json tfplan > tfplan.json || echo "terraform show failed"
+      - echo Building Docker image...
+      - docker build -t 739011406712.dkr.ecr.us-east-1.amazonaws.com/demo:${CODEBUILD_RESOLVED_SOURCE_VERSION} .
   post_build:
     commands:
-      - echo Deploying Infrastructure with Terraform
-#       - cd terraform
-      - terraform plan -detailed-exitcode -out=tfplan || PLAN_EXIT_CODE=$?
-      - if [ $PLAN_EXIT_CODE -eq 2 ]; then terraform apply -auto-approve tfplan; fi
+      - echo Pushing Docker image to Amazon ECR...
+      - docker push 739011406712.dkr.ecr.us-east-1.amazonaws.com/demo:${CODEBUILD_RESOLVED_SOURCE_VERSION}
+      - echo Writing image definitions file...
+      - printf '[{"name":"example-app","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:%s"}]' 739011406712 us-east-1 demo ${CODEBUILD_RESOLVED_SOURCE_VERSION} > imagedefinitions.json
+artifacts:
+  files:
+    - imagedefinitions.json
