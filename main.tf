@@ -49,7 +49,7 @@ provider "aws" {
 
 # Create S3 bucket
 resource "aws_s3_bucket" "my_bucket" {
-  bucket = "my-bucket"
+  bucket = "my-bucket09"
 }
 
 # Create VPC
