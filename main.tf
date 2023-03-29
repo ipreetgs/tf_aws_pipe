@@ -40,77 +40,82 @@
 #   }
     
 # }
+locals {
+  bucketName = var.BucketName
+}
 
-
-# Configure AWS provider
 provider "aws" {
   region = "us-east-1"
+  shared_credentials_file = "/credentials"
+  profile = "demo"
 }
 
-# Create S3 bucket
-resource "aws_s3_bucket" "my_bucket" {
-  bucket = "my-bucket09"
-}
+resource "aws_s3_bucket" "bucket" {
+  bucket = local.bucketName
 
-# Create VPC
-resource "aws_vpc" "my_vpc" {
-  cidr_block = "10.0.0.0/16"
-  enable_dns_hostnames = true
+  versioning {
+    enabled = true
+  }
+
+  acl = "private"
+
   tags = {
-    Name = "My VPC"
+    Name        = "My bucket"
+    Environment = "test"
   }
 }
 
-# Create subnet
-resource "aws_subnet" "my_subnet" {
-  vpc_id = aws_vpc.my_vpc.id
-  cidr_block = "10.0.1.0/24"
-  availability_zone = "us-east-1"
-  tags = {
-    Name = "My Subnet"
+resource "aws_s3_bucket_lifecycle_configuration" "bucket-config" {
+  bucket = aws_s3_bucket.bucket.bucket
+
+  rule {
+    id = "demorule"
+
+    filter {}
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+
+    transition {
+      days          = 60
+      storage_class = "GLACIER"
+    }
+
+    status = "Enabled"
   }
 }
 
-# Create security group
-resource "aws_security_group" "my_security_group" {
-  name = "My Security Group"
-  vpc_id = aws_vpc.my_vpc.id
-
+resource "aws_security_group" "instance" {
+  name_prefix = "instance"
+  
   ingress {
-    from_port = 80
-    to_port = 80
-    protocol = "tcp"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
+  
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-# Create EC2 instance
-resource "aws_instance" "my_instance" {
-  ami = "ami-0c55b159cbfafe1f0"
+resource "aws_instance" "example" {
+  ami           = "ami-0c55b159cbfafe1f0"
   instance_type = "t2.micro"
-  subnet_id = aws_subnet.my_subnet.id
-  vpc_security_group_ids = [aws_security_group.my_security_group.id]
+  key_name      = "mykey"
+  subnet_id     = "subnet-12345678"
+  
+  vpc_security_group_ids = [aws_security_group.instance.id]
+  
   tags = {
-    Name = "My Instance"
+    Name = "My EC2 Instance"
   }
 }
 
-# Create RDS instance
-resource "aws_db_instance" "my_db_instance" {
-  allocated_storage = 10
-  engine = "mysql"
-  engine_version = "5.7"
-  instance_class = "db.t2.micro"
-  name = "my-db-instance"
-  username = "admin"
-  password = "password123"
-  subnet_group_name = "my-subnet-group"
-  vpc_security_group_ids = [aws_security_group.my_security_group.id]
-}
+
