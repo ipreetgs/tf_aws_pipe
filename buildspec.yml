@@ -15,7 +15,9 @@ phases:
   build:
     commands:
       - echo Building Infrastructure with Terraform
-      - cd terraform
+      - ls
+      - pwd
+      # - cd terraform
       - terraform init
       - terraform validate
       - terraform plan -out=tfplan
