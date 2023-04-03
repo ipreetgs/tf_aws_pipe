@@ -8,6 +8,16 @@ resource "aws_s3_bucket" "example_bucket" {
   bucket = "demotxchd"
   acl    = "private"
 }
+# SEcurity group
+resource "aws_security_group" "example_security_group" {
+  name_prefix = "example"
+  ingress {
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 
 # EC2 Instance resource
 resource "aws_instance" "example_instance" {
@@ -16,7 +26,8 @@ resource "aws_instance" "example_instance" {
   key_name      = "tf"
 
   # Attach the instance to a security group that allows SSH access
-  security_groups = ["ssh-access"]
+   # Attach the instance to the security group
+  security_groups = [aws_security_group.example_security_group.id]
 
   # Provision the instance with a script
   user_data = <<-EOF
