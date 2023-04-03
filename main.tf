@@ -1,42 +1,33 @@
-locals {
-  bucketName=var.BucketName
-}
+# Provider configuration
 provider "aws" {
   region = "us-east-1"
-  shared_credentials_files = ["/credentials"]
-  profile = "demo"
 }
 
-resource "aws_s3_bucket" "bucket" {
-  bucket = local.bucketName
-  versioning {
-    enabled=true
-  }
-  
-  acl = "private"
-  tags = {
-    Name        = "My bucket"
-    Environment = "test"
-  }
+# S3 Bucket resource
+resource "aws_s3_bucket" "example_bucket" {
+  bucket = "example-bucket"
+  acl    = "private"
 }
-resource "aws_s3_bucket_lifecycle_configuration" "bucket-config" {
-  bucket=aws_s3_bucket.bucket.bucket
-  rule {
-    id = "demorule"
 
-    filter {}
+# EC2 Instance resource
+resource "aws_instance" "example_instance" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+  key_name      = "tf"
 
-    transition {
-      days          = 30
-      storage_class = "STANDARD_IA"
-    }
+  # Attach the instance to a security group that allows SSH access
+  security_groups = ["ssh-access"]
 
-    transition {
-      days          = 60
-      storage_class = "GLACIER"
-    }
+  # Provision the instance with a script
+  user_data = <<-EOF
+              #!/bin/bash
+              echo "Hello, World!" > index.html
+              nohup python -m SimpleHTTPServer 80 &
+              EOF
 
-    status = "Enabled"
+  # Attach an EBS volume to the instance
+  ebs_block_device {
+    device_name = "/dev/sdh"
+    volume_size = 100
   }
-    
 }
