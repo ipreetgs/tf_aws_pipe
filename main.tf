@@ -24,19 +24,7 @@ resource "aws_instance" "web" {
   ami           = "ami-00c39f71452c08778"
   instance_type = "t2.micro"
   key_name      = "tf"
-
-  # Attach the instance to a security group that allows SSH access
-   # Attach the instance to the security group
   security_groups = [aws_security_group.example_security_group.id]
-
-  # Provision the instance with a script
-  user_data = <<-EOF
-              #!/bin/bash
-              echo "Hello, World!" > index.html
-              nohup python -m SimpleHTTPServer 80 &
-              EOF
-
-  # Attach an EBS volume to the instance
   ebs_block_device {
     device_name = "/dev/sdh"
     volume_size = 100
