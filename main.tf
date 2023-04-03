@@ -20,7 +20,7 @@ resource "aws_security_group" "example_security_group" {
 }
 
 # EC2 Instance resource
-resource "aws_instance" "example_instance" {
+resource "aws_instance" "web" {
   ami           = "ami-00c39f71452c08778"
   instance_type = "t2.micro"
   key_name      = "tf"
