@@ -27,6 +27,6 @@ resource "aws_instance" "web" {
   security_groups = [aws_security_group.example_security_group.id]
   ebs_block_device {
     device_name = "/dev/sdh"
-    volume_size = 100
+    volume_size = 10
   }
 }
