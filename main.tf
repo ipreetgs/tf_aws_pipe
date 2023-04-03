@@ -5,13 +5,13 @@ provider "aws" {
 
 # S3 Bucket resource
 resource "aws_s3_bucket" "example_bucket" {
-  bucket = "example-bucket"
+  bucket = "demotxchd"
   acl    = "private"
 }
 
 # EC2 Instance resource
 resource "aws_instance" "example_instance" {
-  ami           = "ami-0c55b159cbfafe1f0"
+  ami           = "ami-00c39f71452c08778"
   instance_type = "t2.micro"
   key_name      = "tf"
 
