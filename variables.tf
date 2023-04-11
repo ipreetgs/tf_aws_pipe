@@ -1,4 +1,4 @@
 variable "BucketName" {
-    type = string
-    default = "testtxchd1"
+  type    = string
+  default = "testtxchd1"
 }
